@@ -13,6 +13,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -22,6 +23,7 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -153,4 +155,111 @@ public class SampleJob {
                 .writer(csvItemWriter)
                 .build();
     }
+
+    // custom delimiter - sets custom delimiter this example uses | file
+
+    public FlatFileItemReader<StudentCsv> flatFileCustomDelimiterItemReader() {
+        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+        flatFileItemReader.setResource(new FileSystemResource(
+                new File(
+                        "D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.txt")));
+
+        flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {{
+            setLineTokenizer(new DelimitedLineTokenizer() {{
+                setNames("ID", "First Name", "Last Name", "Email");
+                // pipe file set here
+                setDelimiter("|");
+            }});
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<StudentCsv>() {{
+                setTargetType(StudentCsv.class);
+            }});
+        }});
+
+        flatFileItemReader.setLinesToSkip(1);
+
+        return flatFileItemReader;
+    }
+
+    @Bean
+    public Job customDelimiterChunkJob() {
+        return jobBuilderFactory.get("Delimiter Chunk Job")
+                .incrementer(new RunIdIncrementer())
+                .start(customDelimiterChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step customDelimiterChunkStep() {
+        return stepBuilderFactory.get("Delimiter Chunk Step")
+                .<StudentCsv, StudentCsv>chunk(3)
+                .reader(flatFileCustomDelimiterItemReader())
+                .writer(csvItemWriter)
+                .build();
+    }
+
+    // pass file name through program arguments
+
+    @Bean
+    @StepScope
+    public FlatFileItemReader<StudentCsv> flatFilePassFileNameItemReader(
+            @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource
+    ) {
+        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+        flatFileItemReader.setResource(fileSystemResource);
+
+        flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {{
+            setLineTokenizer(new DelimitedLineTokenizer() {{
+                setNames("ID", "First Name", "Last Name", "Email");
+                // pipe file set here
+                setDelimiter("|");
+            }});
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<StudentCsv>() {{
+                setTargetType(StudentCsv.class);
+            }});
+        }});
+
+        flatFileItemReader.setLinesToSkip(1);
+
+        return flatFileItemReader;
+    }
+
+    // turn this on if you have a program argument to run
+    // example argument:  inputFile="D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.txt"
+    // @Bean
+    public Job passFileNameChunkJob() {
+        return jobBuilderFactory.get("Pass File Chunk Job")
+                .incrementer(new RunIdIncrementer())
+                .start(passFileNameChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step passFileNameChunkStep() {
+        return stepBuilderFactory.get("Pass File Chunk Step")
+                .<StudentCsv, StudentCsv>chunk(3)
+                .reader(flatFilePassFileNameItemReader(null))
+                .writer(csvItemWriter)
+                .build();
+    }
+
+    // simple flat file item reader
+
+    public FlatFileItemReader<StudentCsv> flatFileSimpleItemReader() {
+        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+        flatFileItemReader.setResource(new FileSystemResource(
+                new File(
+                        "D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.txt")));
+
+        DefaultLineMapper<StudentCsv> defaultLineMapper = new DefaultLineMapper<StudentCsv>();
+        DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer();
+        delimitedLineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
+        defaultLineMapper.setLineTokenizer(delimitedLineTokenizer);
+
+        BeanWrapperFieldSetMapper<StudentCsv> fieldSetMapper = new BeanWrapperFieldSetMapper<StudentCsv>();
+        fieldSetMapper.setTargetType(StudentCsv.class);
+
+        flatFileItemReader.setLinesToSkip(1);
+        return flatFileItemReader;
+    }
+
 }
