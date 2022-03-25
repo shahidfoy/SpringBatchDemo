@@ -15,7 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+// commenting out service will ignore the job
+//@Service
 public class JobService {
 
     @Autowired

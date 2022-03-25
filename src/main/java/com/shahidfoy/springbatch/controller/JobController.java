@@ -19,8 +19,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/job")
+// commenting out controller will ignore the job
+//@Service
+//@RestController
+//@RequestMapping("/api/job")
 public class JobController {
 
     @Autowired
