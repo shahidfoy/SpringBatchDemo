@@ -3,14 +3,12 @@ package com.shahidfoy.springbatch.config;
 import com.shahidfoy.springbatch.listener.FirstJobListener;
 import com.shahidfoy.springbatch.listener.FirstStepListener;
 import com.shahidfoy.springbatch.model.Student;
+import com.shahidfoy.springbatch.model.StudentJdbc;
 import com.shahidfoy.springbatch.model.StudentXml;
 import com.shahidfoy.springbatch.processor.FirstItemProcessor;
 import com.shahidfoy.springbatch.reader.FirstItemReader;
 import com.shahidfoy.springbatch.service.SecondTasklet;
-import com.shahidfoy.springbatch.writer.CsvItemWriter;
-import com.shahidfoy.springbatch.writer.FirstItemWriter;
-import com.shahidfoy.springbatch.writer.JsonItemWriter;
-import com.shahidfoy.springbatch.writer.XmlItemWriter;
+import com.shahidfoy.springbatch.writer.*;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -20,6 +18,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
@@ -33,8 +32,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
+import javax.sql.DataSource;
 import java.io.File;
 
 @Configuration
@@ -72,6 +73,13 @@ public class SampleJob {
 
     @Autowired
     private XmlItemWriter xmlItemWriter;
+
+    // used to connect to sql database as spring.datasource from application.properties
+    @Autowired
+    private DataSource datasource;
+
+    @Autowired
+    private JdbcItemWriter jdbcItemWriter;
 
 // commenting out bean will ignore the job
     // @Bean
@@ -152,7 +160,7 @@ public class SampleJob {
         return flatFileItemReader;
     }
 
-    @Bean
+    // @Bean
     public Job csvChunkJob() {
         return jobBuilderFactory.get("CSV Chunk Job")
                 .incrementer(new RunIdIncrementer())
@@ -193,7 +201,7 @@ public class SampleJob {
         return flatFileItemReader;
     }
 
-    @Bean
+    // @Bean
     public Job customDelimiterChunkJob() {
         return jobBuilderFactory.get("Delimiter Chunk Job")
                 .incrementer(new RunIdIncrementer())
@@ -329,7 +337,7 @@ public class SampleJob {
         return staxEventItemReader;
     }
 
-    @Bean
+    // @Bean
     public Job xmlChunkJob() {
         return jobBuilderFactory.get("XML Chunk Job")
                 .incrementer(new RunIdIncrementer())
@@ -343,6 +351,39 @@ public class SampleJob {
                 .<StudentXml, StudentXml>chunk(3)
                 .reader(staxEventItemReader(null))
                 .writer(xmlItemWriter)
+                .build();
+    }
+
+    // JDBC item reader
+
+    public JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader() {
+        JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader = new JdbcCursorItemReader<>();
+        jdbcCursorItemReader.setDataSource(this.datasource);
+        jdbcCursorItemReader.setSql(
+                "select id, first_name as firstName, last_name as lastName, email from student"
+        );
+        jdbcCursorItemReader.setRowMapper(new BeanPropertyRowMapper<StudentJdbc>() {
+            {
+                setMappedClass(StudentJdbc.class);
+            }
+        });
+        return jdbcCursorItemReader;
+    }
+
+    @Bean
+    public Job jdbcChunkJob() {
+        return jobBuilderFactory.get("JDBC Chunk Job")
+                .incrementer(new RunIdIncrementer())
+                .start(jdbcChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step jdbcChunkStep() {
+        return stepBuilderFactory.get("JDBC Chunk Step")
+                .<StudentJdbc, StudentJdbc>chunk(3)
+                .reader(jdbcCursorItemReader())
+                .writer(jdbcItemWriter)
                 .build();
     }
 }
