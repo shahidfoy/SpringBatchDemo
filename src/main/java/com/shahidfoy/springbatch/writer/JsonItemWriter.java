@@ -7,10 +7,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class CsvItemWriter implements ItemWriter<Student> {
+public class JsonItemWriter implements ItemWriter<Student> {
     @Override
     public void write(List<? extends Student> list) throws Exception {
-        System.out.println("Inside csv item writer");
+        System.out.println("Inside JSON item writer");
         list.forEach(System.out::println);
     }
 }

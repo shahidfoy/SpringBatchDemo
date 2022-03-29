@@ -2,12 +2,15 @@ package com.shahidfoy.springbatch.config;
 
 import com.shahidfoy.springbatch.listener.FirstJobListener;
 import com.shahidfoy.springbatch.listener.FirstStepListener;
-import com.shahidfoy.springbatch.model.StudentCsv;
+import com.shahidfoy.springbatch.model.Student;
+import com.shahidfoy.springbatch.model.StudentXml;
 import com.shahidfoy.springbatch.processor.FirstItemProcessor;
 import com.shahidfoy.springbatch.reader.FirstItemReader;
 import com.shahidfoy.springbatch.service.SecondTasklet;
 import com.shahidfoy.springbatch.writer.CsvItemWriter;
 import com.shahidfoy.springbatch.writer.FirstItemWriter;
+import com.shahidfoy.springbatch.writer.JsonItemWriter;
+import com.shahidfoy.springbatch.writer.XmlItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -21,12 +24,16 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonItemReader;
+import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.io.File;
 
@@ -59,6 +66,12 @@ public class SampleJob {
 
     @Autowired
     private CsvItemWriter csvItemWriter;
+
+    @Autowired
+    private JsonItemWriter jsonItemWriter;
+
+    @Autowired
+    private XmlItemWriter xmlItemWriter;
 
 // commenting out bean will ignore the job
     // @Bean
@@ -119,18 +132,18 @@ public class SampleJob {
 
     // flat file csv item reader
 
-    public FlatFileItemReader<StudentCsv> flatFileItemReader() {
-        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+    public FlatFileItemReader<Student> flatFileItemReader() {
+        FlatFileItemReader<Student> flatFileItemReader = new FlatFileItemReader<>();
         flatFileItemReader.setResource(new FileSystemResource(
                 new File(
                         "D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.csv")));
 
-        flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {{
+        flatFileItemReader.setLineMapper(new DefaultLineMapper<Student>() {{
                 setLineTokenizer(new DelimitedLineTokenizer() {{
                     setNames("ID", "First Name", "Last Name", "Email");
                 }});
-                setFieldSetMapper(new BeanWrapperFieldSetMapper<StudentCsv>() {{
-                    setTargetType(StudentCsv.class);
+                setFieldSetMapper(new BeanWrapperFieldSetMapper<Student>() {{
+                    setTargetType(Student.class);
                 }});
             }});
 
@@ -150,7 +163,7 @@ public class SampleJob {
 
     private Step csvChunkStep() {
         return stepBuilderFactory.get("CSV Chunk Step")
-                .<StudentCsv, StudentCsv>chunk(3)
+                .<Student, Student>chunk(3)
                 .reader(flatFileItemReader())
                 .writer(csvItemWriter)
                 .build();
@@ -158,20 +171,20 @@ public class SampleJob {
 
     // custom delimiter - sets custom delimiter this example uses | file
 
-    public FlatFileItemReader<StudentCsv> flatFileCustomDelimiterItemReader() {
-        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+    public FlatFileItemReader<Student> flatFileCustomDelimiterItemReader() {
+        FlatFileItemReader<Student> flatFileItemReader = new FlatFileItemReader<>();
         flatFileItemReader.setResource(new FileSystemResource(
                 new File(
                         "D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.txt")));
 
-        flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {{
+        flatFileItemReader.setLineMapper(new DefaultLineMapper<Student>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
                 setNames("ID", "First Name", "Last Name", "Email");
                 // pipe file set here
                 setDelimiter("|");
             }});
-            setFieldSetMapper(new BeanWrapperFieldSetMapper<StudentCsv>() {{
-                setTargetType(StudentCsv.class);
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<Student>() {{
+                setTargetType(Student.class);
             }});
         }});
 
@@ -191,7 +204,7 @@ public class SampleJob {
 
     private Step customDelimiterChunkStep() {
         return stepBuilderFactory.get("Delimiter Chunk Step")
-                .<StudentCsv, StudentCsv>chunk(3)
+                .<Student, Student>chunk(3)
                 .reader(flatFileCustomDelimiterItemReader())
                 .writer(csvItemWriter)
                 .build();
@@ -201,20 +214,20 @@ public class SampleJob {
 
     @Bean
     @StepScope
-    public FlatFileItemReader<StudentCsv> flatFilePassFileNameItemReader(
+    public FlatFileItemReader<Student> flatFilePassFileNameItemReader(
             @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource
     ) {
-        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+        FlatFileItemReader<Student> flatFileItemReader = new FlatFileItemReader<>();
         flatFileItemReader.setResource(fileSystemResource);
 
-        flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {{
+        flatFileItemReader.setLineMapper(new DefaultLineMapper<Student>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
                 setNames("ID", "First Name", "Last Name", "Email");
                 // pipe file set here
                 setDelimiter("|");
             }});
-            setFieldSetMapper(new BeanWrapperFieldSetMapper<StudentCsv>() {{
-                setTargetType(StudentCsv.class);
+            setFieldSetMapper(new BeanWrapperFieldSetMapper<Student>() {{
+                setTargetType(Student.class);
             }});
         }});
 
@@ -236,7 +249,7 @@ public class SampleJob {
 
     private Step passFileNameChunkStep() {
         return stepBuilderFactory.get("Pass File Chunk Step")
-                .<StudentCsv, StudentCsv>chunk(3)
+                .<Student, Student>chunk(3)
                 .reader(flatFilePassFileNameItemReader(null))
                 .writer(csvItemWriter)
                 .build();
@@ -244,22 +257,92 @@ public class SampleJob {
 
     // simple flat file item reader
 
-    public FlatFileItemReader<StudentCsv> flatFileSimpleItemReader() {
-        FlatFileItemReader<StudentCsv> flatFileItemReader = new FlatFileItemReader<>();
+    public FlatFileItemReader<Student> flatFileSimpleItemReader() {
+        FlatFileItemReader<Student> flatFileItemReader = new FlatFileItemReader<>();
         flatFileItemReader.setResource(new FileSystemResource(
                 new File(
                         "D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.txt")));
 
-        DefaultLineMapper<StudentCsv> defaultLineMapper = new DefaultLineMapper<StudentCsv>();
+        DefaultLineMapper<Student> defaultLineMapper = new DefaultLineMapper<Student>();
         DelimitedLineTokenizer delimitedLineTokenizer = new DelimitedLineTokenizer();
         delimitedLineTokenizer.setNames("ID", "First Name", "Last Name", "Email");
         defaultLineMapper.setLineTokenizer(delimitedLineTokenizer);
 
-        BeanWrapperFieldSetMapper<StudentCsv> fieldSetMapper = new BeanWrapperFieldSetMapper<StudentCsv>();
-        fieldSetMapper.setTargetType(StudentCsv.class);
+        BeanWrapperFieldSetMapper<Student> fieldSetMapper = new BeanWrapperFieldSetMapper<Student>();
+        fieldSetMapper.setTargetType(Student.class);
 
         flatFileItemReader.setLinesToSkip(1);
         return flatFileItemReader;
     }
 
+    // JSON item reader
+    // example argument:  inputFile="D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.json"
+    @Bean
+    @StepScope
+    public JsonItemReader<Student> jsonItemReader(
+            @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource
+    ) {
+        JsonItemReader<Student> jsonItemReader = new JsonItemReader<>();
+        jsonItemReader.setResource(fileSystemResource);
+        jsonItemReader.setJsonObjectReader(
+                new JacksonJsonObjectReader<>(Student.class)
+        );
+        // reads a max eight items
+        jsonItemReader.setMaxItemCount(8);
+        // starts at item two
+        jsonItemReader.setCurrentItemCount(2);
+        return jsonItemReader;
+    }
+
+    // @Bean
+    public Job jsonChunkJob() {
+        return jobBuilderFactory.get("JSON Chunk Job")
+                .incrementer(new RunIdIncrementer())
+                .start(jsonChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step jsonChunkStep() {
+        return stepBuilderFactory.get("JSON Chunk Step")
+                .<Student, Student>chunk(3)
+                .reader(jsonItemReader(null))
+                .writer(jsonItemWriter)
+                .build();
+    }
+
+    // XML item reader
+    // example argument:  inputFile="D:\\Documents\\Learning\\Spring\\Batch\\BatchProcessingWithSpringBatch\\spring-batch\\spring-batch\\InputFiles\\students.xml"
+    @Bean
+    @StepScope
+    public StaxEventItemReader<StudentXml> staxEventItemReader(
+            @Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource
+    ) {
+        StaxEventItemReader<StudentXml> staxEventItemReader =  new StaxEventItemReader<>();
+        staxEventItemReader.setResource(fileSystemResource);
+        staxEventItemReader.setFragmentRootElementName("student");
+        staxEventItemReader.setUnmarshaller(new Jaxb2Marshaller() {
+            {
+                setClassesToBeBound(StudentXml.class);
+            }
+        });
+        return staxEventItemReader;
+    }
+
+    @Bean
+    public Job xmlChunkJob() {
+        return jobBuilderFactory.get("XML Chunk Job")
+                .incrementer(new RunIdIncrementer())
+                .start(xmlChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step xmlChunkStep() {
+        return stepBuilderFactory.get("XML Chunk Step")
+                .<StudentXml, StudentXml>chunk(3)
+                .reader(staxEventItemReader(null))
+                .writer(xmlItemWriter)
+                .build();
+    }
 }

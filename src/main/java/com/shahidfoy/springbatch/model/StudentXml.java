@@ -1,6 +1,9 @@
 package com.shahidfoy.springbatch.model;
 
-public class StudentCsv {
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name="student")
+public class StudentXml {
     private Long id;
     private String firstName;
     private String lastName;
@@ -40,7 +43,7 @@ public class StudentCsv {
 
     @Override
     public String toString() {
-        return "StudentCsv{" +
+        return "StudentXml{" +
                 "id=" + id +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +

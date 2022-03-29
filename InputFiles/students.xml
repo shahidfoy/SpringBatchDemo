@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<students>
+    <student>
+        <id>1</id>
+        <firstName>John</firstName>
+        <lastName>Smith</lastName>
+        <email>john@gmail.com</email>
+    </student>
+
+    <student>
+        <id>2</id>
+        <firstName>Jim</firstName>
+        <lastName>Smith</lastName>
+        <email>jim@gmail.com</email>
+    </student>
+
+    <student>
+        <id>3</id>
+        <firstName>Tim</firstName>
+        <lastName>Mark</lastName>
+        <email>timm@gmail.com</email>
+    </student>
+
+    <student>
+        <id>4</id>
+        <firstName>Ciel</firstName>
+        <lastName>Noir</lastName>
+        <email>cielnoir@gmail.com</email>
+    </student>
+
+    <student>
+        <id>5</id>
+        <firstName>Jimmy</firstName>
+        <lastName>Dave</lastName>
+        <email>jd@gmail.com</email>
+    </student>
+
+    <student>
+        <id>6</id>
+        <firstName>Jamie</firstName>
+        <lastName>Foy</lastName>
+        <email>foyj@gmail.com</email>
+    </student>
+
+    <student>
+        <id>7</id>
+        <firstName>Sarah</firstName>
+        <lastName>Fox</lastName>
+        <email>foxy@gmail.com</email>
+    </student>
+
+    <student>
+        <id>8</id>
+        <firstName>Sandra</firstName>
+        <lastName>Ford</lastName>
+        <email>fords@gmail.com</email>
+    </student>
+
+    <student>
+        <id>9</id>
+        <firstName>Peter</firstName>
+        <lastName>Parker</lastName>
+        <email>perterpark@gmail.com</email>
+    </student>
+
+    <student>
+        <id>10</id>
+        <firstName>Jim</firstName>
+        <lastName>Lin</lastName>
+        <email>linjim@gmail.com</email>
+    </student>
+</students>
