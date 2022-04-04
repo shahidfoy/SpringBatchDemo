@@ -29,8 +29,11 @@ import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
@@ -74,14 +77,27 @@ public class SampleJob {
     @Autowired
     private XmlItemWriter xmlItemWriter;
 
-    // used to connect to sql database as spring.datasource from application.properties
-    @Autowired
-    private DataSource datasource;
-
     @Autowired
     private JdbcItemWriter jdbcItemWriter;
 
-// commenting out bean will ignore the job
+    // used to connect to sql database as spring.datasource from application.properties
+    @Bean
+    @Primary
+    // batch datasource
+    @ConfigurationProperties(prefix = "spring.datasource")
+    public DataSource datasource() {
+        return DataSourceBuilder.create().build();
+    };
+
+    @Bean
+    // another datasource
+    @ConfigurationProperties(prefix = "spring.universitydatasource")
+    public DataSource universityDatasource() {
+        return DataSourceBuilder.create().build();
+    };
+
+
+    // commenting out bean will ignore the job
     // @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
@@ -358,7 +374,8 @@ public class SampleJob {
 
     public JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader() {
         JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader = new JdbcCursorItemReader<>();
-        jdbcCursorItemReader.setDataSource(this.datasource);
+        // connects to different datasource
+        jdbcCursorItemReader.setDataSource(this.universityDatasource());
         jdbcCursorItemReader.setSql(
                 "select id, first_name as firstName, last_name as lastName, email from student"
         );
